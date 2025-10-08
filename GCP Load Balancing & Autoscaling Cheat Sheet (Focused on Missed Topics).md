@@ -1,154 +1,82 @@
-# GCP Load Balancing & Autoscaling Cheat Sheet (Focused on Missed Topics)
+# ☁️ GCP Load Balancing & Autoscaling Cheat Sheet
 
-## 1. Cross-Region Traffic & Health Checks
-
-### Key Concept
-
-* **Global HTTP(S) Load Balancers** automatically handle cross-region routing.
-* They only send traffic to **healthy backends**.
-* If a **health check is deleted**, the backend service marks all instances **unhealthy** until a new check is attached.
-
-### Fix & Prevention
-
-* Always define health checks at the backend service level.
-* Validate:
-
-  * Firewall allows health check IPs (`35.191.0.0/16`, `130.211.0.0/22`)
-  * Correct protocol (HTTP vs TCP)
-  * Startup time fits within health check timeout
-
-### Exam Tip
-
-> "Traffic only goes to one region" → Check **health check status**, not a configuration flag.
+This cheat sheet focuses on load balancer selection, health checks, and autoscaling for the **Google Cloud Associate Cloud Engineer (ACE)** exam.
 
 ---
 
-## 2. Internal vs External Load Balancers
+## 1. Which Load Balancer Should I Use?
 
-| Type                               | Layer | Protocol   | Reachability      | Use Case                        |
-| ---------------------------------- | ----- | ---------- | ----------------- | ------------------------------- |
-| **Internal TCP/UDP (Passthrough)** | 4     | TCP/UDP    | Same VPC / Hybrid | Private apps, hybrid networking |
-| **Internal HTTP(S)**               | 7     | HTTP/HTTPS | Same VPC only     | Private web apps (no Peering)   |
-| **External HTTP(S)**               | 7     | HTTP/HTTPS | Global            | Public web apps, CDN            |
+### 🔹 External vs. Internal
 
-### Key Rules
+*   **External LBs**: For traffic from the internet. Have a public IP address.
+*   **Internal LBs**: For traffic inside your GCP network (VPC, peered VPCs, connected on-prem networks). Have a private IP address.
 
-* Internal HTTP(S) **not accessible via VPC Peering**.
-* Internal TCP/UDP supports **VPN/Interconnect** (hybrid connectivity).
+### 🔹 Global vs. Regional
 
-### Exam Tip
+*   **Global LBs**: Distribute traffic to backends in **multiple regions**. Use for worldwide apps.
+*   **Regional LBs**: Distribute traffic to backends in a **single region**. Use for regional apps or compliance needs.
 
-> "Need internal LB across VPN" → Use **Internal TCP/UDP LB**.
+### 🔹 Layer 7 (Application) vs. Layer 4 (Network)
 
----
-
-## 3. Proxy vs Passthrough Network Load Balancers
-
-| Type                                      | Connection Behavior          | Preserves Source IP | Supports Hybrid?  |
-| ----------------------------------------- | ---------------------------- | ------------------- | ----------------- |
-| **Proxy NLB (TCP/SSL Proxy)**             | Terminates client connection | ❌                   | ❌                 |
-| **Passthrough NLB (External / Internal)** | Forwards connection directly | ✅                   | ✅ (Internal only) |
-
-### Quick Rule
-
-* **Need client IP** → Passthrough NLB
-* **Need TLS termination** → Proxy NLB
+*   **Layer 7 (HTTP/S)**: Make routing decisions based on HTTP headers, paths, etc. (e.g., `/video` goes to video backends). Supports SSL offload and CDN.
+*   **Layer 4 (TCP/UDP)**: Make routing decisions based on IP and port. Forwards traffic without inspecting the content.
 
 ---
 
-## 4. Regional vs Global Load Balancers
+## 2. Load Balancer Decision Table
 
-| LB Type                              | Scope              | Example Use Case                          |
-| ------------------------------------ | ------------------ | ----------------------------------------- |
-| **Global External HTTP(S)**          | Multi-region       | Worldwide traffic distribution            |
-| **Regional External Application LB** | Single region      | Regional, compliance-restricted workloads |
-| **Internal HTTP(S)**                 | Regional (private) | Private internal web apps                 |
-
-### Exam Tip
-
-> "Traffic must stay in one region" → **Regional External Application LB**.
-
----
-
-## 5. Hybrid NEGs (Network Endpoint Groups)
-
-### Key Concept
-
-* **Hybrid NEGs** allow attaching **non-GCE backends** (on-premises, other clouds).
-* Supported **only** by **External Application Load Balancers (HTTP/HTTPS)**.
-
-### Use Cases
-
-* Hybrid workloads (part on-prem, part in GCP)
-* Gradual cloud migrations
-
-### Exam Tip
-
-> "Need to send traffic to on-prem and GCE VMs" → Use **External Application LB + Hybrid NEGs**.
+| Load Balancer Type | Scope | Layer | Use Case & Keywords |
+| :--- | :--- | :--- | :--- |
+| **Global External Application LB** | Global | 7 | Public website, CDN, SSL offload, multi-region failover, `Hybrid NEGs` (on-prem). |
+| **Regional External Application LB** | Regional | 7 | Traffic must stay in one region (e.g., `compliance`), SSL offload. |
+| **External TCP/SSL Proxy LB** | Global | 4 | **Non-HTTP(S)** traffic (e.g., IMAP, custom TCP). Terminates TCP/SSL. **Hides client IP**. |
+| **External Passthrough Network LB** | Regional | 4 | High-performance, **preserves client IP**. Forwards traffic directly to VMs. |
+| **Internal Application LB** | Regional | 7 | Internal microservices, web apps. Accessible from same VPC, peered VPCs, on-prem. |
+| **Internal Passthrough Network LB** | Regional | 4 | Internal Layer 4 load balancing. **Preserves client IP**. Accessible from on-prem via VPN/Interconnect. |
 
 ---
 
-## 6. Health Check Timeout & Application Startup
+## 3. Health Checks
 
-### Issue
+*   **Purpose**: LBs only send traffic to backends that pass health checks.
+*   **Common Failure Reasons**:
+    *   **Firewall Rules**: Missing rule to allow health check IPs (`35.191.0.0/16`, `130.211.0.0/22`).
+    *   **Application Startup Time**: App takes too long to start, causing initial checks to fail.
+    *   **Protocol Mismatch**: Health check uses HTTP but the app listens on a raw TCP socket.
+*   **Troubleshooting Tip**: If a Global LB sends traffic to only one region, it's almost always because the backends in the other region are **failing their health checks**.
+*   **Fixing Startup Failures**: Increase the health check's `timeout` or `check-interval` to give the application more time to boot.
 
-If VMs take longer to start, health checks might fail prematurely.
-
-### Fix
-
-Increase parameters:
-
-```bash
-gcloud compute health-checks update http my-check \
-  --check-interval=20s \
-  --timeout=10s \
-  --unhealthy-threshold=5
-```
-
-### Exam Tip
-
-> "App healthy manually but failing health checks" → **Timeout or protocol mismatch**.
+    ```bash
+    gcloud compute health-checks update http my-health-check \
+      --timeout=15s \
+      --check-interval=20s \
+      --unhealthy-threshold=5
+    ```
 
 ---
 
-## 7. Autoscaling Cooldown & Cost Optimization
+## 4. Autoscaling
 
-### Key Concept
-
-* **Cooldown** = wait time after scaling before next evaluation.
-* High cooldown → slower reaction → higher cost.
-
-### Fix
-
-* Lower cooldown for faster scale down.
-* Use pre-baked images for quick boot.
-
-### Exam Tip
-
-> "Scaling down too slowly, increasing cost" → **Lower cooldown period**.
+*   **Purpose**: Automatically add or remove VMs from a Managed Instance Group (MIG) based on load.
+*   **Key Metrics**:
+    *   Average CPU utilization (most common).
+    *   Load balancing capacity.
+    *   Cloud Monitoring metrics (e.g., Pub/Sub queue size).
+*   **Cooldown Period**: The time the autoscaler waits after a scaling event before collecting metrics again.
+    *   **Symptom**: "Scaling down too slowly, increasing costs."
+    *   **Fix**: **Lower the cooldown period** to make the autoscaler more responsive.
+*   **Startup Time**: Use **pre-baked custom images** instead of startup scripts to ensure VMs boot quickly and can serve traffic faster.
 
 ---
 
-## Quick Mnemonics & Decision Table
+## 5. Key Exam Scenarios & Triggers
 
-| Symptom                      | Correct Answer                   |
-| ---------------------------- | -------------------------------- |
-| Private access only          | Internal LB                      |
-| Hybrid/on-prem connectivity  | Internal TCP/UDP LB              |
-| HTTPS or CDN required        | External HTTP(S) LB              |
-| Preserve client IP           | Passthrough NLB                  |
-| Limit traffic to one region  | Regional External Application LB |
-| Cross-region not working     | Health check issue               |
-| Startup failing health check | Increase timeout                 |
-
----
-
-### Author Notes
-
-This cheat sheet was generated for **Google Cloud Associate Cloud Engineer (ACE)** exam prep. Focus areas:
-
-* Load Balancer design patterns
-* Autoscaling tuning
-* Troubleshooting & IAM permissions
-
-**Goal:** Improve recall on LB scope, health checks, and hybrid connectivity for exam readiness.
+| If you need to... | Then use... | Because... |
+| :--- | :--- | :--- |
+| Load balance a **global public website** | **Global External Application LB** | It provides a single anycast IP and integrates with Cloud CDN. |
+| Keep traffic **within a single region** for compliance | **Regional External Application LB** | It ensures both the LB and backends are in the same region. |
+| Load balance internal traffic **across a VPN/Interconnect** | **Internal Passthrough Network LB** | It's designed for hybrid connectivity and preserves the client IP. |
+| **Preserve the original client IP** for external traffic | **External Passthrough Network LB** | It's a passthrough LB that forwards packets directly without proxying. |
+| Load balance traffic to **on-premise servers** | **Global External Application LB** + **Hybrid NEGs** | This is the only combination that supports non-GCP backends. |
+| Troubleshoot why a **region isn't receiving traffic** | **Check Health Checks & Firewalls** | Unhealthy backends are the most common cause of traffic imbalance. |
+| **Reduce costs** from slow scale-down events | **Lower the Autoscaler Cooldown Period** | A shorter cooldown allows the autoscaler to react faster to load decreases. |
