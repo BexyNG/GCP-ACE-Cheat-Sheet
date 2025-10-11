@@ -1,40 +1,40 @@
-# 🎯 GCP Associate Cloud Engineer — Kubernetes & Containers Cheat Sheet
-
-*(Personalized for weak areas; quick reference for the GCP ACE exam)*
-
----
-
-## Table of contents
-
-1. [Namespaces & Resource Scope](#namespaces--resource-scope)
-2. [Node maintenance & scheduling](#node-maintenance--scheduling)
-3. [kubectl debugging & events](#kubectl-debugging--events)
-4. [Ephemeral debugging containers](#ephemeral-debugging-containers)
-5. [GKE node pools & cluster changes](#gke-node-pools--cluster-changes)
-6. [Network policies & pod communication](#network-policies--pod-communication)
-7. [Metrics, monitoring & troubleshooting](#metrics-monitoring--troubleshooting)
-8. [Which tool do I use? (quick reference)](#which-tool-do-i-use-quick-reference)
-9. [Pod lifecycle cheat sheet](#pod-lifecycle-cheat-sheet)
-10. [Service & exposure summary](#service--exposure-summary)
-11. [Final exam mindset](#final-exam-mindset)
+# 🎯 GCP Associate Cloud Engineer – Kubernetes & Containers Cheat Sheet
+### *(Personalized for Weak Areas)*
 
 ---
 
-## Namespaces & Resource Scope
+## 📚 Table of Contents
 
-**Key rule:** deleting a namespace deletes everything inside it (pods, services, deployments, ConfigMaps, Secrets, PVCs), but not cluster-scoped resources (Persistent Disks, Nodes, etc.).
+1. [Namespaces & Resource Scope](#-1️⃣-namespaces--resource-scope)
+2. [Node Maintenance & Scheduling](#-2️⃣-node-maintenance--scheduling)
+3. [kubectl Debugging & Events](#-3️⃣-kubectl-debugging--events)
+4. [Ephemeral Debugging Containers](#-4️⃣-ephemeral-debugging-containers)
+5. [GKE Node Pools & Cluster Changes](#-5️⃣-gke-node-pools--cluster-changes)
+6. [Network Policies & Pod Communication](#-6️⃣-network-policies--pod-communication)
+7. [Metrics, Monitoring & Troubleshooting](#-7️⃣-metrics-monitoring--troubleshooting)
+8. [“Which Tool Do I Use?” Quick Reference](#-8️⃣-which-tool-do-i-use--quick-reference)
+9. [Pod Lifecycle Cheat Sheet](#-9️⃣-pod-lifecycle-cheat-sheet)
+10. [Service & Exposure Summary](#-🔟-service--exposure-summary)
+11. [Final Exam Mindset](#-final-exam-mindset)
 
-| Resource | Deleted with namespace? | Notes |
-|---|---:|---|
+---
+
+## 🧩 1️⃣ Namespaces & Resource Scope
+
+**Key Rule:**  
+Deleting a namespace deletes *everything inside it* — but not global resources.
+
+| Type | Deleted with Namespace? | Notes |
+|------|--------------------------|-------|
 | Pods | ✅ | Terminated immediately |
 | Services | ✅ | Endpoints removed |
 | Deployments | ✅ | Controllers removed |
 | ConfigMaps / Secrets | ✅ | Lost unless backed up |
-| PersistentVolumeClaims (PVCs) | ✅ | PVC removed; underlying disk may remain depending on reclaim policy |
+| PersistentVolumeClaims (PVCs) | ✅ | Volume detached but disk may remain |
 | Persistent Disks (PDs) | ❌ | GCE resource; not namespaced |
 | Nodes | ❌ | Cluster-level resources remain |
 
-**Command tip**
+**Command Tip:**
 
 ```bash
 kubectl get all -n <namespace>
@@ -42,171 +42,174 @@ kubectl get all -n <namespace>
 
 ---
 
-## Node maintenance & scheduling
+## 🧰 2️⃣ Node Maintenance & Scheduling
 
-Node maintenance workflow and commands.
+Node Maintenance Commands
 
 | Action | Command | Meaning |
 |---|---|---|
-| Stop scheduling new pods | `kubectl cordon <node>` | Mark node Unschedulable |
-| Evict pods and drain node | `kubectl drain <node>` | Prepare node for reboot/upgrade (use `--ignore-daemonsets`) |
-| Resume scheduling | `kubectl uncordon <node>` | Node back in rotation |
+| 🟡 Stop scheduling new Pods | `kubectl cordon <node>` | Safely mark node unschedulable |
+| 🔴 Evict Pods + drain node | `kubectl drain <node>` | Prepare node for shutdown/upgrades |
+| 🟢 Resume scheduling | `kubectl uncordon <node>` | Node back in rotation |
 
-Taints vs labels
+Taints vs Labels
 
-- Taints/Tolerations: keep unwanted pods away (example: `kubectl taint nodes key=value:NoSchedule`).
-- Labels + `nodeSelector` / `nodeAffinity`: direct pods to specific nodes.
-
-Example nodeSelector snippet:
+| Concept | Used For | Example |
+|---|---|---|
+| Taints/Tolerations | Keep unwanted Pods away | `kubectl taint nodes key=value:NoSchedule` |
+| Labels + nodeSelector | Direct Pods to specific nodes | Example below 👇 |
 
 ```yaml
 nodeSelector:
-  pool: standard
+	pool: standard
 ```
 
-Mnemonic: "Taint keeps pods away, label pulls pods toward."
+🧠 Mnemonic: “Taint keeps Pods away, label pulls Pods toward.”
 
 ---
 
-## kubectl debugging & events
+## 🕵️‍♀️ 3️⃣ kubectl Debugging & Events
 
-View recent events (sorted oldest→newest by timestamp):
+View Events
 
 ```bash
 kubectl get events -n <namespace> --sort-by=.metadata.creationTimestamp
 ```
 
-Common event issues
+Common Event Issues
 
-- ImagePullBackOff → bad image name, registry auth, or IAM issue
-- FailedScheduling → no matching node, taint/selector conflict
-- CrashLoopBackOff → application crash or bad entrypoint
+- ImagePullBackOff → Bad image name / IAM issue
+- FailedScheduling → Node selector or taint conflict
+- CrashLoopBackOff → App crash / bad entrypoint
 
-Useful commands
+Logs & Describe
 
 ```bash
 kubectl logs <pod> [-c container-name]
 kubectl describe pod <pod>
 ```
 
-Logs show container stdout/stderr; `describe` shows lifecycle, conditions and events.
+Logs show container output, describe shows lifecycle & events.
 
 ---
 
-## Ephemeral debugging containers
+## 🧑‍🔬 4️⃣ Ephemeral Debugging Containers
 
-Run a temporary debugging container attached to a running pod:
+Run a temporary debugging container in a Pod:
 
 ```bash
-kubectl debug <pod> -it --image=busybox -- /bin/sh
+kubectl debug <pod> -it --image=busybox
 ```
 
-Great for troubleshooting missing tools (curl, bash) or testing network connectivity from inside the pod.
+✅ Perfect for diagnosing image issues or missing tools like curl or bash.
 
 ---
 
-## GKE node pools & cluster changes
+## ⚙️ 5️⃣ GKE Node Pools & Cluster Changes
 
-Node pools are effectively immutable for machine-type changes. Recommended workflow:
+Immutable Node Pools:
+You cannot change a machine type in-place.
 
-1. Create a new node pool with the desired machine type:
+Correct Workflow:
 
 ```bash
+# 1. Create new node pool
 gcloud container node-pools create new-pool \
-  --cluster=my-cluster --machine-type=e2-standard-4
-```
+	--cluster=my-cluster --machine-type=e2-standard-4
 
-2. Cordon and drain old nodes, migrate workloads:
-
-```bash
+# 2. Migrate workloads
 kubectl cordon <old-node>
 kubectl drain <old-node> --ignore-daemonsets
-```
 
-3. Delete the old node pool:
-
-```bash
+# 3. Delete old pool
 gcloud container node-pools delete old-pool --cluster=my-cluster
 ```
 
 ---
 
-## Network policies & pod communication
+## 📡 6️⃣ Network Policies & Pod Communication
 
-When Calico/network policies are enabled, traffic is denied by default. Use NetworkPolicy resources to allow specific traffic.
+When Network Policies are enabled, traffic is denied by default.
 
-Allow all traffic from pods in `frontend` namespace to pods in `backend` namespace:
+Allow frontend → backend communication:
 
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-frontend-to-backend
-  namespace: backend
+	name: allow-frontend-to-backend
+	namespace: backend
 spec:
-  podSelector: {}
-  ingress:
-  - from:
-    - namespaceSelector:
-        matchLabels:
-          name: frontend
+	podSelector: {}
+	ingress:
+	- from:
+		- namespaceSelector:
+				matchLabels:
+					name: frontend
 ```
 
 ---
 
-## Metrics, monitoring & troubleshooting
+## 📊 7️⃣ Metrics, Monitoring & Troubleshooting
 
 | Task | Command | Notes |
 |---|---|---|
-| Pod CPU/memory usage | `kubectl top pods` | Requires metrics-server or GKE metrics enabled |
-| Node usage | `kubectl top nodes` | Check resource pressure |
-| View events | `kubectl get events -n <namespace>` | First step in troubleshooting |
-| Resource details | `kubectl describe <resource>` | Shows conditions and events |
+| Pod CPU/memory usage | `kubectl top pods` | Requires metrics-server |
+| Node usage | `kubectl top nodes` | Detects resource bottlenecks |
+| View events | `kubectl get events -n <namespace>` | First step for issues |
+| Resource details | `kubectl describe <resource>` | Shows status, conditions, and events |
 
 ---
 
-## Which tool do I use? (quick reference)
+## 🧠 8️⃣ “Which Tool Do I Use?” — Quick Reference
 
-| Task | Tool |
+| Task | Use This |
 |---|---|
-| Manage cluster / node pools | `gcloud container` (or GKE console) |
-| Manage workloads inside cluster | `kubectl` |
-| View rollouts / logs / metrics | `kubectl` |
-| Manage IAM roles / project-level resources | `gcloud projects add-iam-policy-binding` |
+| Manage cluster / node pools | `gcloud container ...` |
+| Manage workloads inside cluster | `kubectl ...` |
+| View rollouts / logs / metrics | `kubectl ...` |
+| Manage IAM roles | `gcloud projects add-iam-policy-binding` |
 
 ---
 
-## Pod lifecycle cheat sheet
+## 💡 9️⃣ Pod Lifecycle Cheat Sheet
 
-| State | Meaning | Typical fix |
+| State | Meaning | Typical Fix |
 |---|---|---|
-| Pending | No node fits / lacks resources | Check taints, selectors, resource requests |
-| ContainerCreating | Image pull or volume mount issue | Check image, registry auth, PVC status |
+| Pending | No node fits / lacks resources | Check taints/selectors |
+| ContainerCreating | Image pull or volume issue | Check image, registry auth, PVC status |
 | CrashLoopBackOff | Container crashing repeatedly | Inspect logs, fix entrypoint/app |
 | ImagePullBackOff | Registry auth or wrong image path | Fix image path or registry credentials / IAM |
 
 ---
 
-## Service & exposure summary
+## 🧩 🔟 Service & Exposure Summary
 
-| Type | Access scope | Use case |
+| Type | Access Scope | Use Case |
 |---|---|---|
-| ClusterIP | Internal only | Pod-to-pod communication |
-| NodePort | Node's IP:Port | Simple test or dev access |
-| LoadBalancer | Public IP via cloud LB | Production exposure |
-| ExternalName | DNS alias | Redirect to external service |
+| ClusterIP | Internal only | Pod ↔ Pod |
+| NodePort | Node’s IP:Port | Testing or dev access |
+| LoadBalancer | Public IP (via GCP LB) | Production exposure |
+| ExternalName | DNS alias | Link to external APIs |
 
 ---
 
-## Final exam mindset
+## 🧭 Final Exam Mindset
 
-- For troubleshooting start with: `kubectl get events`, `kubectl describe`, `kubectl logs`, `kubectl top`.
-- For deployment changes use: `kubectl rollout restart` / `kubectl rollout undo`.
-- For infrastructure changes use `gcloud` (node pools, networking, IAM).
-- For connectivity issues check: Service selectors → Pod labels → NetworkPolicies.
+For troubleshooting → start with `kubectl get events`, `kubectl describe`, `kubectl logs`, `kubectl top`.
 
-Focus: node maintenance (cordon/drain), events & debugging, network policies, namespace behavior, and node pool updates.
+For deployment changes → use `kubectl rollout restart` or `kubectl rollout undo`.
+
+For infrastructure → use `gcloud`, not `kubectl`.
+
+For connectivity issues → check Service selectors → Pod labels → NetworkPolicies.
+
+# 🎯 GCP Associate Cloud Engineer – Kubernetes & Containers Cheat Sheet
+### *(Personalized for Weak Areas)*
 
 ---
 
-If you want, I can add a printable PDF export, internal anchor links from a top-level index, or convert this into slides for quick review.
+## 📚 Table of Contents
+
+
+1. [Namespaces & Resource Scope](#-1️⃣-namespaces--resource-scope)
