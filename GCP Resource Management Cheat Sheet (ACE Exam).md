@@ -1,5 +1,15 @@
 # 🚀 GCP Resource Management Cheat Sheet (ACE Exam)
 
+## Table of Contents
+
+- [Resource Hierarchy](#-resource-hierarchy)
+- [Quotas](#-quotas)
+- [Organization Policies](#-organization-policies)
+- [Billing](#-billing)
+- [Quotas vs Budgets vs Policies](#-quotas-vs-budgets-vs-policies)
+- [Labels](#-labels)
+- [Project Creation](#-project-creation)
+
 ---
 
 ## 🔹 Resource Hierarchy

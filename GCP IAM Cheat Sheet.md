@@ -1,5 +1,15 @@
 # 🚀 GCP IAM Cheat Sheet (ACE Exam)
 
+# 🚀 GCP IAM Cheat Sheet (ACE Exam)
+
+## Table of Contents
+
+- [Roles in IAM](#1-roles-in-iam)
+- [IAM Conditions vs Organization Policies](#2-iam-conditions-vs-organization-policies)
+- [Audit Logs in Cloud Logging](#3-audit-logs-in-cloud-logging)
+- [Service Account Best Practices](#4-service-account-best-practices)
+- [Extra Notes / Exam Traps](#5-extra-notes--exam-traps)
+
 ## 1. Roles in IAM
 
 ### 🔹 Basic Roles (legacy, project‑wide)

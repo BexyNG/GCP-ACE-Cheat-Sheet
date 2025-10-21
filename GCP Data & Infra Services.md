@@ -1,4 +1,13 @@
 # 🧾 Cheat Sheet — GCP Data & Infra Services (Exam Focus)
+## Table of Contents
+
+- [BigQuery](#🧮-bigquery)
+- [Dataflow](#⚙️-dataflow)
+- [Dataproc](#🧰-dataproc)
+- [Dataprep](#🧼-dataprep)
+- [Terraform on GCP](#🏗️-terraform-on-gcp)
+- [Google Cloud Marketplace](#🛒-google-cloud-marketplace)
+- [Common Exam Differentiators](#💡-common-exam-differentiators)
 
 ## 🧮 BigQuery
 

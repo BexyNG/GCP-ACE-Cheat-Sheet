@@ -1,5 +1,14 @@
 # GCP Observability (Exam Focus)
 
+## Table of Contents
+
+- [Cloud Logging](#cloud-logging)
+- [Cloud Monitoring](#cloud-monitoring)
+- [Error Reporting](#error-reporting)
+- [Cloud Trace](#cloud-trace)
+- [Cloud Profiler](#cloud-profiler)
+- [Common Exam Differentiators](#common-exam-differentiators)
+
 ## 🔍 Cloud Logging
 
 Stores logs from GCP services, agents, and custom apps.

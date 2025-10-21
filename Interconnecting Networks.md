@@ -1,5 +1,14 @@
 # 🔍 Weak Areas Identified
 
+## Table of Contents
+
+- [HA VPN vs Classic VPN vs Interconnect](#ha-vpn-vs-classic-vpn-vs-interconnect)
+- [VPC Peering vs Shared VPC vs Cloud VPN](#vpc-peering-vs-shared-vpc-vs-cloud-vpn)
+- [Google API Access Options](#google-api-access-options)
+- [IPv6 Support](#ipv6-support)
+- [Routing Behavior](#routing-behavior)
+- [Cheat Sheet (1-Pager)](#-cheat-sheet-1-pager)
+
 ### HA VPN vs Classic VPN vs Interconnect
 
 * **HA VPN** = SLA + encryption, dual tunnels, supports BGP.

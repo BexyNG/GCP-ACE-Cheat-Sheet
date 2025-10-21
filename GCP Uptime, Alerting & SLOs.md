@@ -1,5 +1,14 @@
 # 🧾 Custom 1-Page Cheat Sheet: Uptime, Alerting & SLOs
 
+## Table of Contents
+
+- [Core Concepts](#-core-concepts)
+- [Uptime Checks](#-uptime-checks)
+- [Alerting Policies](#-alerting-policies)
+- [Error Budgets & Responses](#-error-budgets--responses)
+- [Downtime Allowance Quick Table](#-downtime-allowance-quick-table)
+- [Exam Tips](#-exam-tips)
+
 ## 🔍 Core Concepts
 
 | Term | Meaning |

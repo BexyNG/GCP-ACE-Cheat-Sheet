@@ -1,8 +1,15 @@
 # ☁️ GCP Storage & Database Exam Cheat Sheet
 
-Quick reference for **Google Cloud Associate Cloud Engineer** exam.
+## Table of Contents
+
+- [Bigtable vs Spanner vs Firestore](#-bigtable-vs-spanner-vs-firestore)
+- [Cloud SQL vs AlloyDB](#-cloud-sql-vs-alloydb)
+- [Cloud Storage Classes](#-cloud-storage-classes)
+- [Quick Exam Triggers](#-quick-exam-triggers)
 
 ---
+
+Quick reference for **Google Cloud Associate Cloud Engineer** exam.
 
 ## 🌐 Bigtable vs Spanner vs Firestore
 

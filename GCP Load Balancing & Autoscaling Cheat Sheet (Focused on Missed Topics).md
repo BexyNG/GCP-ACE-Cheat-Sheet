@@ -1,5 +1,13 @@
 # ☁️ GCP Load Balancing & Autoscaling Cheat Sheet
 
+## Table of Contents
+
+- [Which Load Balancer Should I Use?](#1-which-load-balancer-should-i-use)
+- [Load Balancer Decision Table](#2-load-balancer-decision-table)
+- [Health Checks](#3-health-checks)
+- [Autoscaling](#4-autoscaling)
+- [Key Exam Scenarios & Triggers](#5-key-exam-scenarios--triggers)
+
 This cheat sheet focuses on load balancer selection, health checks, and autoscaling for the **Google Cloud Associate Cloud Engineer (ACE)** exam.
 
 ---
