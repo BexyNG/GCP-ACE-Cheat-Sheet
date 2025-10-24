@@ -191,9 +191,3 @@ Mnemonic: "VPN for privacy, Interconnect for performance, Peering for internal t
 
 ---
 
-If you'd like, I can also:
-
-- Add a one-page printable cheat-sheet summary for VPN/Interconnect decisions.
-- Add sample exam-style questions and answers for these topics.
-
----
