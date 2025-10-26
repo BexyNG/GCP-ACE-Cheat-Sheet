@@ -1,7 +1,5 @@
 # 🚀 GCP IAM Cheat Sheet (ACE Exam)
 
-# 🚀 GCP IAM Cheat Sheet (ACE Exam)
-
 ## Table of Contents
 
 - [Roles in IAM](#1-roles-in-iam)
