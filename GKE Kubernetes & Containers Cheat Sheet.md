@@ -203,13 +203,3 @@ For deployment changes → use `kubectl rollout restart` or `kubectl rollout und
 For infrastructure → use `gcloud`, not `kubectl`.
 
 For connectivity issues → check Service selectors → Pod labels → NetworkPolicies.
-
-# 🎯 GCP Associate Cloud Engineer – Kubernetes & Containers Cheat Sheet
-### *(Personalized for Weak Areas)*
-
----
-
-## 📚 Table of Contents
-
-
-1. [Namespaces & Resource Scope](#-1️⃣-namespaces--resource-scope)
